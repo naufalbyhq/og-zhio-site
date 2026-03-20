@@ -120,6 +120,8 @@ export default function Home() {
   const [content, setContent] = useState(
     "Make your message visible in one frame, so people remember it in one glance.",
   );
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState("");
 
   const selectedPreset = PRESETS.find((item) => item.id === presetId) ?? PRESETS[0];
   const ui = THEME_UI[theme];
@@ -137,6 +139,44 @@ export default function Home() {
   }, [author, content, presetId, theme, title]);
 
   const downloadUrl = `${imageUrl}&download=1`;
+
+  async function handleGenerateQuote() {
+    setIsGenerating(true);
+    setGenerationError("");
+
+    try {
+      const response = await fetch("/api/quote", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          topic: title,
+          author,
+        }),
+      });
+
+      const payload = (await response
+        .json()
+        .catch(() => null)) as { quote?: string; error?: string } | null;
+
+      const errorMessage =
+        payload && typeof payload.error === "string"
+          ? payload.error
+          : "Failed to generate quote.";
+
+      if (!response.ok || !payload || typeof payload.quote !== "string" || !payload.quote.trim()) {
+        throw new Error(errorMessage);
+      }
+
+      setContent(payload.quote);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to generate quote.";
+      setGenerationError(message);
+    } finally {
+      setIsGenerating(false);
+    }
+  }
 
   return (
     <div className={`min-h-screen w-full text-slate-100 ${ui.pageBg}`}>
@@ -207,6 +247,22 @@ export default function Home() {
                 className={`w-full rounded-xl border border-white/15 bg-slate-900/90 px-3 py-2 text-sm leading-6 outline-none transition ${ui.focus}`}
               />
             </label>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={handleGenerateQuote}
+                disabled={isGenerating}
+                className={`inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 ${ui.accentBtn} ${ui.accentHover}`}
+              >
+                {isGenerating ? "Generating..." : "Generate with GLM"}
+              </button>
+              {generationError ? (
+                <p className="text-xs text-rose-300">{generationError}</p>
+              ) : (
+                <p className="text-xs text-slate-400">AI output fills the Content field automatically.</p>
+              )}
+            </div>
 
             <label className="space-y-1 text-sm">
               <span className="text-slate-300">Author / Footer</span>

@@ -31,6 +31,19 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+### Enable GLM quote generation
+
+Create `.env.local`:
+
+```bash
+GLM_API_KEY=your_glm_api_key
+# Optional overrides:
+# GLM_MODEL=glm-4.7
+# GLM_API_URL=https://open.bigmodel.cn/api/paas/v4/chat/completions
+```
+
+Then use **Generate with GLM** in the editor to auto-fill quote content.
+
 ## Build and quality checks
 
 ```bash
@@ -54,6 +67,7 @@ After deploy, map your custom domain/subdomain in Vercel:
 
 - UI: `/`
 - Image API: `/api/image`
+- GLM Quote API: `/api/quote`
 
 Example:
 
