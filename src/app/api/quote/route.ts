@@ -13,9 +13,14 @@ type QuoteRequest = {
 type GlmResponse = {
   choices?: Array<{
     message?: {
-      content?: string;
+      content?: unknown;
     };
+    delta?: {
+      content?: unknown;
+    };
+    text?: unknown;
   }>;
+  output_text?: unknown;
 };
 
 function clean(input: unknown, max: number): string {
@@ -26,19 +31,73 @@ function clean(input: unknown, max: number): string {
   return input.replace(/\s+/g, " ").trim().slice(0, max);
 }
 
+function normalizeText(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => {
+        if (typeof item === "string") {
+          return item;
+        }
+
+        if (item && typeof item === "object") {
+          const text = (item as { text?: unknown; content?: unknown }).text;
+          if (typeof text === "string") {
+            return text;
+          }
+
+          const content = (item as { text?: unknown; content?: unknown }).content;
+          if (typeof content === "string") {
+            return content;
+          }
+        }
+
+        return "";
+      })
+      .join(" ");
+  }
+
+  if (value && typeof value === "object") {
+    const text = (value as { text?: unknown }).text;
+    if (typeof text === "string") {
+      return text;
+    }
+
+    const content = (value as { content?: unknown }).content;
+    if (typeof content === "string") {
+      return content;
+    }
+  }
+
+  return "";
+}
+
 function extractQuote(payload: unknown): string {
   if (!payload || typeof payload !== "object") {
     return "";
   }
 
   const typed = payload as GlmResponse;
-  const raw = typed.choices?.[0]?.message?.content;
+  const choice = typed.choices?.[0];
 
-  if (typeof raw !== "string") {
-    return "";
+  const candidates: unknown[] = [
+    choice?.message?.content,
+    choice?.delta?.content,
+    choice?.text,
+    typed.output_text,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeText(candidate).replace(/\s+/g, " ").trim();
+    if (normalized) {
+      return normalized.slice(0, 320);
+    }
   }
 
-  return raw.replace(/\s+/g, " ").trim().slice(0, 320);
+  return "";
 }
 
 export async function POST(request: Request) {
@@ -139,6 +198,12 @@ export async function POST(request: Request) {
   const quote = extractQuote(data);
 
   if (!quote) {
+    console.error("GLM parse error: empty content", {
+      model,
+      hasChoices: Boolean((data as { choices?: unknown } | null)?.choices),
+      keys: data && typeof data === "object" ? Object.keys(data as Record<string, unknown>) : [],
+    });
+
     return Response.json(
       { error: "GLM returned no quote content." },
       { status: 502 },
