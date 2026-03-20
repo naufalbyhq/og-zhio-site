@@ -14,6 +14,7 @@ type GlmResponse = {
   choices?: Array<{
     message?: {
       content?: unknown;
+      reasoning_content?: unknown;
     };
     delta?: {
       content?: unknown;
@@ -91,6 +92,7 @@ function extractQuote(payload: unknown): string {
 
   const candidates: unknown[] = [
     choice?.message?.content,
+    choice?.message?.reasoning_content,
     choice?.delta?.content,
     choice?.text,
     typed.output_text,
@@ -122,6 +124,14 @@ function extractUpstreamError(payload: unknown): string {
   }
 
   return "";
+}
+
+function parseJsonSafe(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(request: Request) {
@@ -199,11 +209,9 @@ export async function POST(request: Request) {
   }
 
   if (!response.ok) {
-    const errorPayload = (await response.json().catch(() => null)) as
-      | { error?: { message?: string } }
-      | null;
-
-    const upstreamMessage = errorPayload?.error?.message;
+    const rawErrorText = await response.text();
+    const errorPayload = parseJsonSafe(rawErrorText || "");
+    const upstreamMessage = extractUpstreamError(errorPayload) || rawErrorText.slice(0, 240);
 
     console.error("GLM upstream error", {
       status: response.status,
@@ -218,7 +226,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const data = (await response.json().catch(() => null)) as unknown;
+  const rawText = await response.text();
+  const data = parseJsonSafe(rawText || "");
   const upstreamError = extractUpstreamError(data);
 
   if (upstreamError) {
@@ -242,6 +251,7 @@ export async function POST(request: Request) {
       model,
       hasChoices: Boolean((data as { choices?: unknown } | null)?.choices),
       keys: data && typeof data === "object" ? Object.keys(data as Record<string, unknown>) : [],
+      bodyPreview: rawText.slice(0, 240),
     });
 
     return Response.json(
