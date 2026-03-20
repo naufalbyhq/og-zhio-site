@@ -18,6 +18,7 @@ const THEMES = [
 ] as const;
 
 type ThemeId = (typeof THEMES)[number]["id"];
+type QuoteLanguage = "en" | "id";
 
 const THEME_UI: Record<ThemeId, { pageBg: string; panelBg: string; previewBg: string; accentBtn: string; accentHover: string; accentTag: string; focus: string; }> = {
   midnight: {
@@ -117,6 +118,7 @@ export default function Home() {
   const [theme, setTheme] = useState<ThemeId>("midnight");
   const [title, setTitle] = useState("Quote of the day");
   const [author, setAuthor] = useState("zhio.site");
+  const [quoteLanguage, setQuoteLanguage] = useState<QuoteLanguage>("en");
   const [content, setContent] = useState(
     "Make your message visible in one frame, so people remember it in one glance.",
   );
@@ -153,6 +155,7 @@ export default function Home() {
         body: JSON.stringify({
           topic: title,
           author,
+          language: quoteLanguage,
         }),
       });
 
@@ -192,7 +195,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             <label className="space-y-1 text-sm">
               <span className="text-slate-300">Preset</span>
               <select
@@ -222,6 +225,18 @@ export default function Home() {
                     {item.label}
                   </option>
                 ))}
+              </select>
+            </label>
+
+            <label className="space-y-1 text-sm">
+              <span className="text-slate-300">Quote Language</span>
+              <select
+                value={quoteLanguage}
+                onChange={(event) => setQuoteLanguage(event.target.value as QuoteLanguage)}
+                className={`w-full rounded-xl border border-white/15 bg-slate-900/90 px-3 py-2 text-sm text-white outline-none transition ${ui.focus}`}
+              >
+                <option value="en">English</option>
+                <option value="id">Indonesia</option>
               </select>
             </label>
           </div>
@@ -260,7 +275,7 @@ export default function Home() {
               {generationError ? (
                 <p className="text-xs text-rose-300">{generationError}</p>
               ) : (
-                <p className="text-xs text-slate-400">AI output fills the Content field automatically.</p>
+                <p className="text-xs text-slate-400">AI output follows the selected quote language and fills Content automatically.</p>
               )}
             </div>
 

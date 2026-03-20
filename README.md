@@ -43,6 +43,7 @@ GLM_API_KEY=your_glm_api_key
 ```
 
 Then use **Generate with GLM** in the editor to auto-fill quote content.
+You can choose quote language: **English** or **Indonesia**.
 
 ## Build and quality checks
 
@@ -68,6 +69,12 @@ After deploy, map your custom domain/subdomain in Vercel:
 - UI: `/`
 - Image API: `/api/image`
 - GLM Quote API: `/api/quote`
+
+`/api/quote` request body supports:
+
+- `topic` (string, required)
+- `author` (string, optional)
+- `language` (`en` or `id`, optional, default `en`)
 
 Example:
 

@@ -8,7 +8,10 @@ const DEFAULT_GLM_MODEL = "glm-4.7";
 type QuoteRequest = {
   topic?: string;
   author?: string;
+  language?: string;
 };
+
+type QuoteLanguage = "en" | "id";
 
 type GlmResponse = {
   choices?: Array<{
@@ -138,8 +141,12 @@ function looksLikeMetaOutput(text: string): boolean {
   return /(analyze the request|topic:|tone:|output constraint)/i.test(text);
 }
 
-function fallbackQuote(topic: string, author: string): string {
+function fallbackQuote(topic: string, author: string, language: QuoteLanguage): string {
   const writer = author || "zhio.site";
+  if (language === "id") {
+    return `${topic} tumbuh lewat langkah kecil yang konsisten. - ${writer}`;
+  }
+
   return `${topic} grows through consistent small steps. - ${writer}`;
 }
 
@@ -171,16 +178,28 @@ export async function POST(request: Request) {
     return Response.json({ error: "`author` must be a string." }, { status: 400 });
   }
 
+  if (body.language !== undefined && body.language !== "en" && body.language !== "id") {
+    return Response.json({ error: "`language` must be either `en` or `id`." }, { status: 400 });
+  }
+
   const topic = clean(body.topic, MAX_TOPIC);
   const author = clean(body.author, MAX_AUTHOR);
+  const language: QuoteLanguage = body.language === "id" ? "id" : "en";
 
   if (!topic) {
     return Response.json({ error: "`topic` cannot be empty." }, { status: 400 });
   }
 
-  const userPrompt = `Create one short quote about: ${topic}`;
+  const userPrompt =
+    language === "id"
+      ? `Buat satu kutipan pendek tentang: ${topic}`
+      : `Create one short quote about: ${topic}`;
 
-  const authorHint = author ? ` Include a tone fitting author: ${author}.` : "";
+  const authorHint = author
+    ? language === "id"
+      ? ` Gunakan nuansa yang cocok dengan penulis: ${author}.`
+      : ` Include a tone fitting author: ${author}.`
+    : "";
 
   let response: Response;
 
@@ -202,7 +221,9 @@ export async function POST(request: Request) {
           {
             role: "system",
             content:
-              "You write concise memorable quotes for OpenGraph cards. Return only one quote as plain text, no markdown, no extra commentary.",
+              language === "id"
+                ? "Kamu menulis kutipan singkat yang mudah diingat untuk kartu OpenGraph. Kembalikan hanya satu kutipan dalam Bahasa Indonesia sebagai plain text, tanpa markdown, tanpa komentar tambahan."
+                : "You write concise memorable quotes for OpenGraph cards. Return only one quote in English as plain text, no markdown, no extra commentary.",
           },
           {
             role: "user",
@@ -273,7 +294,7 @@ export async function POST(request: Request) {
   }
 
   if (looksLikeMetaOutput(quote)) {
-    return Response.json({ quote: fallbackQuote(topic, author) });
+    return Response.json({ quote: fallbackQuote(topic, author, language) });
   }
 
   return Response.json({ quote });
