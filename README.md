@@ -39,7 +39,7 @@ Create `.env.local`:
 GLM_API_KEY=your_glm_api_key
 # Optional overrides:
 # GLM_MODEL=glm-4.7
-# GLM_API_URL=https://open.bigmodel.cn/api/paas/v4/chat/completions
+# GLM_API_URL=https://api.z.ai/api/paas/v4/chat/completions
 ```
 
 Then use **Generate with GLM** in the editor to auto-fill quote content.

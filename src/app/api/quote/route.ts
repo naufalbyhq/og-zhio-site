@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 
 const MAX_TOPIC = 140;
 const MAX_AUTHOR = 80;
-const DEFAULT_GLM_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
+const DEFAULT_GLM_URL = "https://api.z.ai/api/paas/v4/chat/completions";
 const DEFAULT_GLM_MODEL = "glm-4.7";
 
 type QuoteRequest = {
@@ -21,6 +21,12 @@ type GlmResponse = {
     text?: unknown;
   }>;
   output_text?: unknown;
+  error?: {
+    message?: unknown;
+  };
+  message?: unknown;
+  msg?: unknown;
+  code?: unknown;
 };
 
 function clean(input: unknown, max: number): string {
@@ -94,6 +100,24 @@ function extractQuote(payload: unknown): string {
     const normalized = normalizeText(candidate).replace(/\s+/g, " ").trim();
     if (normalized) {
       return normalized.slice(0, 320);
+    }
+  }
+
+  return "";
+}
+
+function extractUpstreamError(payload: unknown): string {
+  if (!payload || typeof payload !== "object") {
+    return "";
+  }
+
+  const typed = payload as GlmResponse;
+  const candidates: unknown[] = [typed.error?.message, typed.message, typed.msg];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeText(candidate).replace(/\s+/g, " ").trim();
+    if (normalized) {
+      return normalized.slice(0, 240);
     }
   }
 
@@ -195,6 +219,22 @@ export async function POST(request: Request) {
   }
 
   const data = (await response.json().catch(() => null)) as unknown;
+  const upstreamError = extractUpstreamError(data);
+
+  if (upstreamError) {
+    console.error("GLM upstream logical error", {
+      model,
+      message: upstreamError,
+    });
+
+    return Response.json(
+      {
+        error: `GLM error: ${upstreamError}`,
+      },
+      { status: 502 },
+    );
+  }
+
   const quote = extractQuote(data);
 
   if (!quote) {
