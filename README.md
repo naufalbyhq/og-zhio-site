@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Zhio OG Creator
 
-## Getting Started
+OpenGraph / Quote / Code image generator for `og.zhio.site` or `quote.zhio.site`.
 
-First, run the development server:
+## What it does
+
+- Generate social-ready images instantly from text, quote, or code input.
+- Export preset sizes for Twitter/X, LinkedIn, standard OpenGraph, and blog hero headers.
+- Use a visual editor with live preview and one-click PNG download.
+
+## Presets
+
+- `twitter-post` -> 1200x675
+- `twitter-card` -> 1200x600
+- `linkedin-post` -> 1200x627
+- `og-standard` -> 1200x630
+- `blog-hero` -> 1920x1080
+
+## Tech stack
+
+- Next.js App Router
+- `next/og` (`ImageResponse`) for server-side PNG rendering
+- TypeScript + Tailwind CSS
+
+## Local development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Build and quality checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint
+npm run build
+```
 
-## Learn More
+## Deploy to Vercel
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+vercel
+vercel --prod
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+After deploy, map your custom domain/subdomain in Vercel:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `og.zhio.site` (recommended)
+- or `quote.zhio.site`
 
-## Deploy on Vercel
+## Main routes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- UI: `/`
+- Image API: `/api/image`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Example:
+
+`/api/image?mode=quote&preset=og-standard&theme=midnight&title=Daily%20Quote&author=zhio.site&content=Make%20it%20simple`
