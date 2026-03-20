@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { getPresetById, type ContentMode } from "@/lib/presets";
+import { getPresetById } from "@/lib/presets";
 
 export const runtime = "edge";
 
@@ -20,25 +20,27 @@ function gradientByTheme(theme: string | null) {
       return "linear-gradient(130deg, #24120a 0%, #7a2e1f 45%, #f58a36 100%)";
     case "mono":
       return "linear-gradient(135deg, #0f1012 0%, #1f242a 100%)";
+    case "ocean":
+      return "linear-gradient(130deg, #061a40 0%, #0353a4 45%, #00b4d8 100%)";
+    case "forest":
+      return "linear-gradient(130deg, #081c15 0%, #1b4332 45%, #2d6a4f 100%)";
+    case "rose":
+      return "linear-gradient(130deg, #2b0a1c 0%, #7a1f4b 45%, #d63384 100%)";
+    case "violet":
+      return "linear-gradient(130deg, #180b2e 0%, #3a1f6d 45%, #7b2cbf 100%)";
+    case "amber":
+      return "linear-gradient(130deg, #261400 0%, #8f3b00 45%, #ff8c00 100%)";
+    case "graphite":
+      return "linear-gradient(130deg, #151515 0%, #2b2b2b 45%, #474747 100%)";
     default:
       return "linear-gradient(130deg, #111827 0%, #1f2937 40%, #0f766e 100%)";
   }
 }
 
-function contentStyles(mode: ContentMode) {
-  if (mode === "code") {
-    return {
-      fontFamily: "ui-monospace, Menlo, Consolas, monospace",
-      fontSize: 40,
-      lineHeight: 1.4,
-      whiteSpace: "pre-wrap" as const,
-      letterSpacing: "-0.01em",
-    };
-  }
-
+function contentStyles() {
   return {
     fontFamily: "Georgia, ui-serif, serif",
-    fontSize: mode === "quote" ? 58 : 50,
+    fontSize: 54,
     lineHeight: 1.22,
     letterSpacing: "-0.02em",
   };
@@ -47,11 +49,6 @@ function contentStyles(mode: ContentMode) {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const preset = getPresetById(searchParams.get("preset"));
-
-  const mode = (searchParams.get("mode") ?? "quote") as ContentMode;
-  const safeMode: ContentMode = ["text", "quote", "code"].includes(mode)
-    ? mode
-    : "quote";
 
   const title = clean(searchParams.get("title"), MAX_TITLE);
   const author = clean(searchParams.get("author"), MAX_AUTHOR);
@@ -62,9 +59,8 @@ export async function GET(request: Request) {
   const background = gradientByTheme(theme);
   const edgePadding = preset.width >= 1900 ? 120 : 80;
   const cardInset = preset.width >= 1900 ? 52 : 34;
-  const tone = safeMode === "code" ? "#7dd3fc" : "#fda4af";
 
-  const filename = `zhio-${preset.id}-${safeMode}.png`;
+  const filename = `zhio-${preset.id}.png`;
   const asAttachment = searchParams.get("download") === "1";
 
   return new ImageResponse(
@@ -100,39 +96,12 @@ export async function GET(request: Request) {
             gap: 26,
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div
-              style={{
-                fontSize: 26,
-                fontFamily: "ui-sans-serif, system-ui, sans-serif",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                opacity: 0.82,
-              }}
-            >
-              Zhio Creator Utility
-            </div>
-            <div
-              style={{
-                display: "flex",
-                gap: 14,
-                alignItems: "center",
-                fontFamily: "ui-sans-serif, system-ui, sans-serif",
-                fontSize: 22,
-                opacity: 0.85,
-              }}
-            >
-              <div style={{ width: 14, height: 14, borderRadius: 999, backgroundColor: tone }} />
-              <span>{preset.width} x {preset.height}</span>
-            </div>
-          </div>
-
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
             {title ? (
               <div
                 style={{
                   fontFamily: "ui-sans-serif, system-ui, sans-serif",
-                  fontSize: safeMode === "code" ? 34 : 30,
+                  fontSize: 30,
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
                   color: "rgba(226,232,240,0.85)",
@@ -142,9 +111,7 @@ export async function GET(request: Request) {
               </div>
             ) : null}
 
-            <div style={contentStyles(safeMode)}>
-              {safeMode === "quote" ? `“${content}”` : content}
-            </div>
+            <div style={contentStyles()}>{content}</div>
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
@@ -166,7 +133,7 @@ export async function GET(request: Request) {
                 color: "rgba(191,219,254,0.86)",
               }}
             >
-              {`${safeMode.toUpperCase()} MODE`}
+              og.zhio.site
             </div>
           </div>
         </div>
