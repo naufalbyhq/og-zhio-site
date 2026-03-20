@@ -134,6 +134,15 @@ function parseJsonSafe(text: string): unknown {
   }
 }
 
+function looksLikeMetaOutput(text: string): boolean {
+  return /(analyze the request|topic:|tone:|output constraint)/i.test(text);
+}
+
+function fallbackQuote(topic: string, author: string): string {
+  const writer = author || "zhio.site";
+  return `${topic} grows through consistent small steps. - ${writer}`;
+}
+
 export async function POST(request: Request) {
   const apiKey = process.env.GLM_API_KEY?.trim() || "";
   const model = process.env.GLM_MODEL?.trim() || DEFAULT_GLM_MODEL;
@@ -186,6 +195,9 @@ export async function POST(request: Request) {
         model,
         temperature: 0.8,
         max_tokens: 120,
+        thinking: {
+          type: "disabled",
+        },
         messages: [
           {
             role: "system",
@@ -258,6 +270,10 @@ export async function POST(request: Request) {
       { error: "GLM returned no quote content." },
       { status: 502 },
     );
+  }
+
+  if (looksLikeMetaOutput(quote)) {
+    return Response.json({ quote: fallbackQuote(topic, author) });
   }
 
   return Response.json({ quote });
