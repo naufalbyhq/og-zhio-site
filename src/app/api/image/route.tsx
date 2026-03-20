@@ -96,7 +96,6 @@ export async function GET(request: Request) {
             display: "flex",
             flexDirection: "column",
             width: "100%",
-            zIndex: 1,
             justifyContent: "space-between",
             gap: 26,
           }}
@@ -167,7 +166,7 @@ export async function GET(request: Request) {
                 color: "rgba(191,219,254,0.86)",
               }}
             >
-              {safeMode.toUpperCase()} MODE
+              {`${safeMode.toUpperCase()} MODE`}
             </div>
           </div>
         </div>
